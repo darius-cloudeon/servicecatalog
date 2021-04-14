@@ -1,0 +1,89 @@
+trigger:
+- master
+
+variables:
+- group: smoketest-tf
+- group: management-git
+
+- name: terraformversion
+  value: '0.13.3'
+- name: resourcetype
+  value: 'smoketest_azure_stor_module'
+- name: resourcenameprefix
+  value: 'smoketest_azure_stor_module'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+resources:
+  repositories:
+  - repository: templates
+    type: git
+    name: CCOE/mgmt-pipeline-template
+    ref: refs/tags/0.9
+
+stages:
+
+- stage: build
+  displayName: Build
+  jobs: 
+  - template: stage-git-tf-build.yaml@templates
+    parameters:
+      environment: contributor
+      environmentshort: contributor
+      clientprefix: landingzonetest
+      resourcetype: ${{ variables.resourcetype }}
+      resourcenameprefix: ${{ variables.resourcenameprefix }}
+      backendcontainername: $(backendcontainername)
+      backendresourcegroup: $(backendresourcegroup)
+      backendstorageaccount: $(backendstorageaccount)
+      terraformversion: ${{ variables.terraformversion }}
+      accesstoken: $(access-token)
+      knownHostsEntry: $(knownHostsEntry)
+      sshpub: '$(sshpub)'
+      sshpassphrase: $(sshpassphrase)
+      serviceconnection: $(serviceconnection)
+      subscriptionname : $(subscriptionname)
+      subfolder : $(subfolder)
+
+- stage: deploy
+  displayName: Deploy
+  jobs: 
+  - template: stage-git-tf-deploy.yaml@templates
+    parameters:
+      environment: landingzonetest
+      environmentshort: contributor
+      clientprefix: energinetdemocloudeon
+      resourcetype: ${{ variables.resourcetype }}
+      resourcenameprefix: ${{ variables.resourcenameprefix }}
+      backendcontainername: $(backendcontainername)
+      backendresourcegroup: $(backendresourcegroup)
+      backendstorageaccount: $(backendstorageaccount)
+      terraformversion: ${{ variables.terraformversion }}
+      accesstoken: $(access-token)
+      knownHostsEntry: $(knownHostsEntry)
+      sshpub: '$(sshpub)'
+      sshpassphrase: $(sshpassphrase)
+      serviceconnection: $(serviceconnection)
+      subscriptionname : $(subscriptionname)
+
+- stage: destroy
+  displayName: Destroy
+  jobs: 
+  - template: stage-git-tf-destroy.yaml@templates
+    parameters:
+      environment: contributor
+      environmentshort: contributor
+      clientprefix: landingzonetest
+      resourcetype: ${{ variables.resourcetype }}
+      resourcenameprefix: ${{ variables.resourcenameprefix }}
+      backendcontainername: $(backendcontainername)
+      backendresourcegroup: $(backendresourcegroup)
+      backendstorageaccount: $(backendstorageaccount)
+      terraformversion: ${{ variables.terraformversion }}
+      accesstoken: $(access-token)
+      knownHostsEntry: $(knownHostsEntry)
+      sshpub: '$(sshpub)'
+      sshpassphrase: $(sshpassphrase)
+      serviceconnection: $(serviceconnection)
+      subscriptionname : $(subscriptionname)

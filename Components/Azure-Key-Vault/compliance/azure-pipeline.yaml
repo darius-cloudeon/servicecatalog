@@ -1,0 +1,104 @@
+trigger:
+- none
+
+variables:
+- group: test-tf
+- group: management-git
+- group: Azure-Key-Vault
+- name: resourcetype
+  value: 'azure_key_vault'
+- name: resourcenameprefix
+  value: 'azure_key_vault'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+resources:
+  repositories:
+  - repository: templates
+    type: git
+    name: 'Cloudeon CCOE/mgmt-pipeline-template'
+    ref: refs/heads/import
+
+stages:
+
+- stage: build
+  displayName: build
+  jobs:
+  - template: stage-git-tf-build.yaml@templates
+    parameters:
+      environment: contributor
+      environmentshort: contributor
+      clientprefix: landingzonetest
+      resourcetype: ${{ variables.resourcetype }}
+      resourcenameprefix: ${{ variables.resourcenameprefix }}
+      backendcontainername: $(backendcontainername)
+      backendresourcegroup: $(backendresourcegroup)
+      backendstorageaccount: $(backendstorageaccount)
+      terraformversion: ${{ variables.terraformversion }}
+      accesstoken: $(access-token)
+      knownHostsEntry: $(knownHostsEntry)
+      sshpub: '$(sshpub)'
+      sshpassphrase: $(sshpassphrase)
+      serviceconnection: $(serviceconnection)
+      subscriptionname : $(subscriptionname)
+      subfolder : $(subfolder)
+
+- stage: deploy
+  displayName: deploy
+  jobs:
+  - template: stage-git-tf-deploy.yaml@templates
+    parameters:
+      environment: contributor
+      environmentshort: contributor
+      clientprefix: landingzonetest
+      resourcetype: ${{ variables.resourcetype }}
+      resourcenameprefix: ${{ variables.resourcenameprefix }}
+      backendcontainername: $(backendcontainername)
+      backendresourcegroup: $(backendresourcegroup)
+      backendstorageaccount: $(backendstorageaccount)
+      terraformversion: ${{ variables.terraformversion }}
+      accesstoken: $(access-token)
+      knownHostsEntry: $(knownHostsEntry)
+      sshpub: '$(sshpub)'
+      sshpassphrase: $(sshpassphrase)
+      serviceconnection: $(serviceconnection)
+      subscriptionname : $(subscriptionname)
+
+- stage: approval
+  displayName: Approval
+  jobs:
+  - job: waitForValidation
+    displayName: Wait for external validation
+    pool: server
+    timeoutInMinutes: 4320 # job times out in 3 days
+    steps:
+    - task: ManualValidation@0
+      timeoutInMinutes: 1440 # task times out in 1 day
+      inputs:
+          notifyUsers: |
+              mmy@cloudeon.com
+          instructions: 'Please validate the build configuration and resume'
+          onTimeout: 'resume'
+
+- stage: destroy
+  displayName: destroy
+  jobs:
+  - template: stage-git-tf-destroy.yaml@templates
+    parameters:
+      environment: contributor
+      environmentshort: contributor
+      clientprefix: landingzonetest
+      resourcetype: ${{ variables.resourcetype }}
+      resourcenameprefix: ${{ variables.resourcenameprefix }}
+      backendcontainername: $(backendcontainername)
+      backendresourcegroup: $(backendresourcegroup)
+      backendstorageaccount: $(backendstorageaccount)
+      terraformversion: ${{ variables.terraformversion }}
+      accesstoken: $(access-token)
+      knownHostsEntry: $(knownHostsEntry)
+      sshpub: '$(sshpub)'
+      sshpassphrase: $(sshpassphrase)
+      serviceconnection: $(serviceconnection)
+      subscriptionname : $(subscriptionname)
+
